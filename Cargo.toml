@@ -1,0 +1,16 @@
+[package]
+name = "rustmpc"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.82"
+clap = "4.5.4"
+crossterm = {version= "0.27.0", features=["bracketed-paste"]}
+log = "0.4.21"
+mpd = "0.1.0"
+serde = {version = "1.0.199", features=["derive"]}
+stderrlog = "0.6.0"
+toml = "0.8.12"
