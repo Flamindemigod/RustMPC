@@ -2,7 +2,7 @@ use std::io::Write;
 
 use anyhow::Result;
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{MoveTo, MoveToNextLine},
     event::{
         Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers, MouseButton,
         MouseEvent, MouseEventKind,
@@ -12,6 +12,7 @@ use crossterm::{
     ExecutableCommand, QueueableCommand,
 };
 use modules::{
+    config::Config,
     crossterm::Crossterm,
     mpd::Mpd,
     ui::{Render, UI},
@@ -39,11 +40,14 @@ fn main() -> Result<()> {
         // .timestamp(opt.ts.unwrap_or(stderrlog::Timestamp::Off))
         .init()
         .unwrap();
-    // let mut mpd = Mpd::new("127.0.0.1:6600");
+
+    let conf = Config::default();
+    conf.generate_config()?;
+    // return Ok(());
+    let mut mpd = Mpd::new("127.0.0.1:6600");
     // let list_of_songs = mpd.get_all_songs();
     // println!("List of Songs : {:#?}", mpd.get_all_songs());
 
-    // mpd.update_loop();
     // list_of_songs
     //     .iter()
     //     .for_each(|s| mpd.push_into_queue(s.clone()));
@@ -53,6 +57,7 @@ fn main() -> Result<()> {
     let mut bg = SetBackgroundColor(Color::Black);
     if let Ok(mut ct) = Crossterm::init() {
         loop {
+            mpd.update_loop();
             if ct.is_event_ready() {
                 if let Ok(event) = ct.read_event() {
                     match event {
@@ -73,30 +78,39 @@ fn main() -> Result<()> {
                             ..
                         }) => {
                             bg = SetBackgroundColor(Color::DarkRed);
-                        },
+                        }
                         Event::Mouse(MouseEvent {
                             kind: MouseEventKind::Up(MouseButton::Left),
                             ..
                         }) => {
                             bg = SetBackgroundColor(Color::Reset);
                         }
-
+                        play if conf.keybinds.play_pause.matches(&play) => mpd.toggle_play(), 
+                        next if conf.keybinds.next.matches(&next) => mpd.next_song(),
+                        prev if conf.keybinds.prev.matches(&prev) => mpd.prev_song(),
+                        stop if conf.keybinds.stop.matches(&stop) => mpd.stop_playback(),
+                        vol_up if conf.keybinds.vol_up.matches(&vol_up) => mpd.increase_volume(),
+                        vol_down if conf.keybinds.vol_down.matches(&vol_down) => mpd.decrease_volume(),
+                        
                         _ => {}
                     }
                 }
             }
-            ct.stdout
-                .queue(MoveTo(0, 0))
-                .and_then(|q| {
-                    q.queue(bg)?.queue(Print(format!(
-                        "{x}:{y}@{w}x{h}", 
-                        x = ct.screen.x,
-                        y = ct.screen.y,
-                        w = ct.screen.width,
-                        h = ct.screen.height,
+            ct.stdout.queue(MoveTo(0, 0)).and_then(|q| {
+                q.queue(terminal::Clear(ClearType::UntilNewLine))?
+                    .queue(bg)?
+                    .queue(Print(format!(
+                        "Title: {title}",
+                        title = mpd.get_current_playing().unwrap().title.unwrap(),
+                    )))?
+                    .queue(MoveToNextLine(1))?
+                    .queue(terminal::Clear(ClearType::UntilNewLine))?
+                    .queue(Print(format!(
+                        "{time:#?} / {duration:#?}",
+                        time = mpd.get_time().unwrap().0,
+                        duration = mpd.get_time().unwrap().1
                     )))
-                })?
-                .queue(terminal::Clear(ClearType::UntilNewLine))?;
+            })?;
             ct.stdout.flush()?;
         }
         let _ = ct.destroy();

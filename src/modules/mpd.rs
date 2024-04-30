@@ -32,6 +32,24 @@ impl Mpd {
             .map_err(|err| warn!("Failed to set Volume: {err}"));
     }
 
+    pub fn increase_volume(&mut self) {
+        if let Some(vol) = self.get_volume() {
+            let _ = self
+                .connection
+                .volume(vol + 10)
+                .map_err(|err| warn!("Failed to set Volume: {err}"));
+        }
+    }
+     pub fn decrease_volume(&mut self) {
+        if let Some(vol) = self.get_volume() {
+            let _ = self
+                .connection
+                .volume(vol - 10)
+                .map_err(|err| warn!("Failed to set Volume: {err}"));
+        }
+    }
+
+
     pub fn get_volume(&self) -> Option<i8> {
         if let Some(status) = &self.status {
             return Some(status.volume);
@@ -149,6 +167,15 @@ impl Mpd {
         }
     }
 
+    pub fn get_current_playing(&mut self) -> Option<Song> {
+        match self.connection.currentsong() {
+            Ok(song) => song,
+            Err(err) => {
+                error!("Failed to get current song: {err}");
+                None
+            }
+        }
+    }
     pub fn get_all_songs(&mut self) -> Vec<Song> {
         if let Ok(list) = self
             .connection
@@ -186,7 +213,7 @@ impl Mpd {
         let _ = self.connection.delete(song_id);
     }
 
-    pub fn push_into_queue(&mut self, song: Song){
+    pub fn push_into_queue(&mut self, song: Song) {
         let _ = self.connection.push(song);
     }
 }

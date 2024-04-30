@@ -8,10 +8,12 @@ use crossterm::{
     cursor::{self, MoveToColumn, MoveToRow},
     event::{
         poll, read, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyEventState, KeyModifiers,
+        KeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
     queue,
     style::{self, Color, Print, SetBackgroundColor, Stylize},
-    terminal, ExecutableCommand, QueueableCommand,
+    terminal::{self, supports_keyboard_enhancement},
+    ExecutableCommand, QueueableCommand,
 };
 use log::{error, log};
 
@@ -36,6 +38,11 @@ impl UI for Crossterm {
             },
         };
         ct.stdout.execute(EnableMouseCapture)?;
+        if supports_keyboard_enhancement()? {
+            ct.stdout
+                .execute(PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::all()))?;
+        }
+
         ct.stdout
             .execute(terminal::Clear(terminal::ClearType::All))?;
         Ok(ct)
