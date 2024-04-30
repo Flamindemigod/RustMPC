@@ -7,8 +7,7 @@ use anyhow::{Error, Result};
 use crossterm::{
     cursor::{self, MoveToColumn, MoveToRow},
     event::{
-        poll, read, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyEventState, KeyModifiers,
-        KeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+        poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyEventState, KeyModifiers, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags
     },
     queue,
     style::{self, Color, Print, SetBackgroundColor, Stylize},
@@ -67,6 +66,8 @@ impl UI for Crossterm {
     }
     fn destroy(&mut self) -> Result<()> {
         self.stdout
+            .queue(DisableMouseCapture)?
+            .queue(PopKeyboardEnhancementFlags)?
             .queue(SetBackgroundColor(Color::Reset))?
             .queue(terminal::Clear(terminal::ClearType::All))?
             .queue(MoveToColumn(0))?;
