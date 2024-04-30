@@ -1,11 +1,21 @@
+use std::io::Write;
+
 use anyhow::Result;
+use crossterm::{
+    cursor::MoveTo,
+    event::{
+        Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers, MouseButton,
+        MouseEvent, MouseEventKind,
+    },
+    style::{Color, Print, SetBackgroundColor},
+    terminal::{self, ClearType},
+    ExecutableCommand, QueueableCommand,
+};
 use modules::{
+    crossterm::Crossterm,
     mpd::Mpd,
     ui::{Render, UI},
 };
-// use crossterm::{
-//     cursor, event::{read, Event, KeyCode, KeyEventKind, KeyEventState, KeyModifiers}, queue, style::{self, Print, Stylize}, terminal, ExecutableCommand, QueueableCommand
-// };
 mod modules;
 
 // #[derive(Debug)]
@@ -21,14 +31,6 @@ mod modules;
 //     bounds: Rect,
 // }
 
-fn test<T>(v: T)
-where
-    T: UI,
-    T: Render,
-{
-    v.init()
-}
-
 fn main() -> Result<()> {
     stderrlog::new()
         .module(module_path!())
@@ -37,24 +39,68 @@ fn main() -> Result<()> {
         // .timestamp(opt.ts.unwrap_or(stderrlog::Timestamp::Off))
         .init()
         .unwrap();
-    let mut mpd = Mpd::new("127.0.0.1:6600");
-    let list_of_songs = mpd.get_all_songs();
-    println!("List of Songs : {:#?}", mpd.get_all_songs());
+    // let mut mpd = Mpd::new("127.0.0.1:6600");
+    // let list_of_songs = mpd.get_all_songs();
+    // println!("List of Songs : {:#?}", mpd.get_all_songs());
 
-    mpd.update_loop();
-    list_of_songs
-        .iter()
-        .for_each(|s| mpd.push_into_queue(s.clone()));
+    // mpd.update_loop();
+    // list_of_songs
+    //     .iter()
+    //     .for_each(|s| mpd.push_into_queue(s.clone()));
+    // mpd.toggle_shuffle();
     // mpd.push(list_of_songs[0].to_owned());
-    mpd.toggle_play();
-
     // mpd.toggle_play();
-    //     let mut stdout = io::stdout();
-    //     terminal::enable_raw_mode()?;
-    // let size = terminal::size()?;
-    //     let mut program = Program { bounds: Rect{x:0, y:0, width: size.0, height: size.1} };
-    //     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
-    //
+    let mut bg = SetBackgroundColor(Color::Black);
+    if let Ok(mut ct) = Crossterm::init() {
+        loop {
+            if ct.is_event_ready() {
+                if let Ok(event) = ct.read_event() {
+                    match event {
+                        Event::Key(KeyEvent {
+                            code: KeyCode::Char('q'),
+                            ..
+                        })
+                        | Event::Key(KeyEvent {
+                            code: KeyCode::Char('c'),
+                            modifiers: KeyModifiers::CONTROL,
+                            ..
+                        })
+                        | Event::Key(KeyEvent {
+                            code: KeyCode::Esc, ..
+                        }) => break,
+                        Event::Mouse(MouseEvent {
+                            kind: MouseEventKind::Down(MouseButton::Left),
+                            ..
+                        }) => {
+                            bg = SetBackgroundColor(Color::DarkRed);
+                        },
+                        Event::Mouse(MouseEvent {
+                            kind: MouseEventKind::Up(MouseButton::Left),
+                            ..
+                        }) => {
+                            bg = SetBackgroundColor(Color::Reset);
+                        }
+
+                        _ => {}
+                    }
+                }
+            }
+            ct.stdout
+                .queue(MoveTo(0, 0))
+                .and_then(|q| {
+                    q.queue(bg)?.queue(Print(format!(
+                        "{x}:{y}@{w}x{h}", 
+                        x = ct.screen.x,
+                        y = ct.screen.y,
+                        w = ct.screen.width,
+                        h = ct.screen.height,
+                    )))
+                })?
+                .queue(terminal::Clear(ClearType::UntilNewLine))?;
+            ct.stdout.flush()?;
+        }
+        let _ = ct.destroy();
+    }
     //     loop {
     //         //Event Loop
     //         if let event = read()? {
@@ -88,7 +134,5 @@ fn main() -> Result<()> {
     //         //Draw Loop
     //     }
     //
-    //     stdout.flush()?;
-    //     terminal::disable_raw_mode()?;
     Ok(())
 }
