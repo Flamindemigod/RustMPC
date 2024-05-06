@@ -216,4 +216,8 @@ impl Mpd {
     pub fn push_into_queue(&mut self, song: Song) {
         let _ = self.connection.push(song);
     }
+
+    pub fn clear_queue(&mut self){
+        let _ = self.connection.clear();
+    }
 }

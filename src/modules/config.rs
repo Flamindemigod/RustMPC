@@ -18,7 +18,7 @@ enum Either<L, R> {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Mpd {
+pub struct Mpd {
     addr: Either<SocketAddr, Box<str>>,
     password: Option<Box<str>>,
 }
@@ -33,10 +33,11 @@ impl Default for Mpd {
 }
 
 impl Mpd {
-    fn get_addr(&self) -> Result<SocketAddr> {
+    pub fn get_addr(&self) -> Result<SocketAddr> {
         match &self.addr {
             //IpAddr
             Either::Left(addr) => Ok(*addr),
+            //String
             Either::Right(addr) => Ok(addr.to_socket_addrs()?.next().unwrap()),
         }
     }
@@ -100,21 +101,21 @@ impl Default for Keybinds {
                 KeyModifiers::NONE,
             ))]
             .into(),
-            play_pause: vec![Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::Play),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Char(' '),
-                KeyModifiers::NONE,
-            ))]
+            play_pause: vec![
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::Play),
+                    KeyModifiers::NONE,
+                )),
+                Event::Key(KeyEvent::new(KeyCode::Char(' '), KeyModifiers::NONE)),
+            ]
             .into(),
-            stop: vec![Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::Stop),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Char('s'),
-                KeyModifiers::NONE,
-            ))]
+            stop: vec![
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::Stop),
+                    KeyModifiers::NONE,
+                )),
+                Event::Key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE)),
+            ]
             .into(),
             clear_queue: vec![Event::Key(KeyEvent::new(
                 KeyCode::Char('d'),
@@ -126,37 +127,37 @@ impl Default for Keybinds {
                 KeyModifiers::NONE,
             ))]
             .into(),
-            next: vec![Event::Key(KeyEvent::new(
-                KeyCode::Char('n'),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::TrackNext),
-                KeyModifiers::NONE,
-            ))]
+            next: vec![
+                Event::Key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE)),
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::TrackNext),
+                    KeyModifiers::NONE,
+                )),
+            ]
             .into(),
-            prev: vec![Event::Key(KeyEvent::new(
-                KeyCode::Char('N'),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::TrackPrevious),
-                KeyModifiers::NONE,
-            ))]
+            prev: vec![
+                Event::Key(KeyEvent::new(KeyCode::Char('N'), KeyModifiers::NONE)),
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::TrackPrevious),
+                    KeyModifiers::NONE,
+                )),
+            ]
             .into(),
-            vol_up: vec![Event::Key(KeyEvent::new(
-                KeyCode::Char('+'),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::RaiseVolume),
-                KeyModifiers::NONE,
-            ))]
+            vol_up: vec![
+                Event::Key(KeyEvent::new(KeyCode::Char('+'), KeyModifiers::NONE)),
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::RaiseVolume),
+                    KeyModifiers::NONE,
+                )),
+            ]
             .into(),
-            vol_down: vec![Event::Key(KeyEvent::new(
-                KeyCode::Char('-'),
-                KeyModifiers::NONE,
-            )), Event::Key(KeyEvent::new(
-                KeyCode::Media(crossterm::event::MediaKeyCode::LowerVolume),
-                KeyModifiers::NONE,
-            ))]
+            vol_down: vec![
+                Event::Key(KeyEvent::new(KeyCode::Char('-'), KeyModifiers::NONE)),
+                Event::Key(KeyEvent::new(
+                    KeyCode::Media(crossterm::event::MediaKeyCode::LowerVolume),
+                    KeyModifiers::NONE,
+                )),
+            ]
             .into(),
         }
     }
@@ -164,7 +165,7 @@ impl Default for Keybinds {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Config {
-    mpd: Mpd,
+    pub mpd: Mpd,
     pub keybinds: Keybinds,
 }
 
@@ -173,7 +174,10 @@ impl Config {
         let home = config_dir();
         if let Some(p) = home {
             let conf_path = p.join(env!("CARGO_PKG_NAME")).join("config.yaml");
-
+            if conf_path.exists() {
+                info!("Config exists. Skipping Generation");
+                return Ok(());
+            }
             fs::create_dir_all(
                 conf_path
                     .parent()

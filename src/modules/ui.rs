@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::event::{Event, KeyEvent};
+use crossterm::{event::{Event, KeyEvent}, style::Color};
 
 #[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Rect {
@@ -24,5 +24,12 @@ pub trait UI {
 }
 
 pub trait Render {
-    fn set_background(rect: Event);
+    fn set_background(&mut self, rect: Rect, color: Color);
+    fn set_text(&mut self, rect: Rect, text: &str, overflow: Overflow);
+    fn render_frame(&mut self);
+}
+
+pub enum Overflow{
+    Char,
+    Word,
 }
