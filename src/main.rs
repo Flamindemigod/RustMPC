@@ -2,11 +2,8 @@ mod modules;
 
 use anyhow::Result;
 use crossterm::{
-    cursor::{MoveTo, MoveToNextLine},
-    event::{Event, KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
-    style::{Color, Print, SetBackgroundColor},
-    terminal::{self, ClearType},
-    QueueableCommand,
+    event::{Event, KeyCode, KeyEvent, KeyModifiers },
+    style::Color,
 };
 use modules::{
     config::Config,
@@ -14,7 +11,6 @@ use modules::{
     mpd::Mpd,
     ui::{Render, UI},
 };
-use std::io::Write;
 
 fn main() -> Result<()> {
     stderrlog::new()
@@ -27,8 +23,6 @@ fn main() -> Result<()> {
     let conf = Config::default();
     conf.generate_config()?;
     let mut mpd = Mpd::new(conf.mpd.get_addr()?);
-
-    let mut bg = SetBackgroundColor(Color::Black);
     if let Ok(mut ct) = Crossterm::init() {
         loop {
             mpd.update_loop();
@@ -47,18 +41,6 @@ fn main() -> Result<()> {
                         | Event::Key(KeyEvent {
                             code: KeyCode::Esc, ..
                         }) => break,
-                        Event::Mouse(MouseEvent {
-                            kind: MouseEventKind::Down(MouseButton::Left),
-                            ..
-                        }) => {
-                            bg = SetBackgroundColor(Color::DarkRed);
-                        }
-                        Event::Mouse(MouseEvent {
-                            kind: MouseEventKind::Up(MouseButton::Left),
-                            ..
-                        }) => {
-                            bg = SetBackgroundColor(Color::Reset);
-                        }
                         play if conf.keybinds.play_pause.matches(&play) => mpd.toggle_play(),
                         next if conf.keybinds.next.matches(&next) => mpd.next_song(),
                         prev if conf.keybinds.prev.matches(&prev) => mpd.prev_song(),
@@ -79,10 +61,10 @@ fn main() -> Result<()> {
                     modules::ui::Rect {
                         x: 0,
                         y: 0,
-                        width: (ct.screen.width as f32 * 0.1).floor() as u32,
+                        width: (ct.screen.width as f32 * 0.20).floor() as u32,
                         height: ct.screen.height,
                     },
-                    Color::DarkBlue,
+                    Color::Rgb { r: 127, g: 0, b: 185 },
                 );
 
                 ct.set_text(
@@ -96,23 +78,7 @@ fn main() -> Result<()> {
                     modules::ui::Overflow::Char,
                 );
             }
-            ct.render_frame();
-            // ct.stdout.queue(MoveTo(0, 0)).and_then(|q| {
-            //     q.queue(terminal::Clear(ClearType::UntilNewLine))?
-            //         .queue(bg)?
-            //         .queue(Print(format!(
-            //             "Title: {title}",
-            //             title = mpd.get_current_playing().unwrap().title.unwrap(),
-            //         )))?
-            //         .queue(MoveToNextLine(1))?
-            //         .queue(terminal::Clear(ClearType::UntilNewLine))?
-            //         .queue(Print(format!(
-            //             "{time:#?} / {duration:#?}",
-            //             time = mpd.get_time().unwrap().0,
-            //             duration = mpd.get_time().unwrap().1
-            //         )))
-            // })?;
-            ct.stdout.flush()?;
+            ct.render_frame()?;
         }
         let _ = ct.destroy();
     }

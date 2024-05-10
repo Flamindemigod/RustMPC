@@ -26,7 +26,7 @@ pub trait UI {
 pub trait Render {
     fn set_background(&mut self, rect: Rect, color: Color);
     fn set_text(&mut self, rect: Rect, text: &str, overflow: Overflow);
-    fn render_frame(&mut self);
+    fn render_frame(&mut self) -> Result<()>;
 }
 
 pub enum Overflow{
