@@ -9,7 +9,7 @@ use modules::{
     config::Config,
     crossterm::Crossterm,
     mpd::Mpd,
-    ui::{Render, UI},
+    ui::{Overflow, Render, UI},
 };
 
 fn main() -> Result<()> {
@@ -77,7 +77,7 @@ fn main() -> Result<()> {
                     },
                     Color::Reset,
                 );
-                 ct.set_attributes(
+                ct.set_attributes(
                     modules::ui::Rect {
                         x: 0,
                         y: 0,
@@ -86,7 +86,6 @@ fn main() -> Result<()> {
                     },
                     crossterm::style::Attribute::NormalIntensity,
                 );
-
 
                 if let Some((current_time, total_time)) = mpd.get_time() {
                     ct.set_background(
@@ -127,7 +126,6 @@ fn main() -> Result<()> {
                         crossterm::style::Attribute::Bold,
                     );
                 };
-
                 ct.set_text(
                     modules::ui::Rect {
                         x: 1,
@@ -143,6 +141,19 @@ fn main() -> Result<()> {
                     .as_str(),
                     modules::ui::Overflow::Char,
                 );
+                if let Some((current_time, total_time)) = mpd.get_time() {
+                    let dur = format!("{}:{:02}/{}:{:02}", current_time.as_secs()/60, current_time.as_secs()%60, total_time.as_secs()/60, total_time.as_secs()%60);
+                    ct.set_text(
+                        modules::ui::Rect {
+                            x: ct.screen.width - (dur.len() as u32) - 1,
+                            y: 0,
+                            width: dur.len() as u32,
+                            height: 1,
+                        },
+                        dur.as_str(),
+                        Overflow::Char,
+                    );
+                }
             }
             ct.render_frame()?;
         }
