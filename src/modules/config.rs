@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Error, Ok, Result};
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use dirs::config_dir;
-use log::{error, info};
+use log::info;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
@@ -80,10 +80,12 @@ pub struct Keybinds {
     //Player Keybinds
     pub play_pause: EventWrapper,
     pub stop: EventWrapper,
+        pub next: EventWrapper,
+    pub prev: EventWrapper,
+    pub repeat: EventWrapper,
+    pub shuffle: EventWrapper,
     pub clear_queue: EventWrapper,
     pub add_to_queue: EventWrapper,
-    pub next: EventWrapper,
-    pub prev: EventWrapper,
     pub vol_up: EventWrapper,
     pub vol_down: EventWrapper,
 }
@@ -117,6 +119,17 @@ impl Default for Keybinds {
                 Event::Key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE)),
             ]
             .into(),
+              repeat: vec![Event::Key(KeyEvent::new(
+                KeyCode::Char('r'),
+                KeyModifiers::NONE,
+            ))]
+            .into(),
+            shuffle: vec![Event::Key(KeyEvent::new(
+                KeyCode::Char('s'),
+                KeyModifiers::SHIFT,
+            ))]
+            .into(),
+
             clear_queue: vec![Event::Key(KeyEvent::new(
                 KeyCode::Char('d'),
                 KeyModifiers::NONE,

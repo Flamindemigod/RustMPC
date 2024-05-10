@@ -1,7 +1,7 @@
 use std::{net::ToSocketAddrs, time::Duration};
 
 use log::{error, info, warn};
-use mpd::{song::QueuePlace, Client, Id, Song, Stats, Status};
+use mpd::{Client, Id, Song, Stats, Status};
 
 pub struct Mpd {
     connection: Client,
@@ -40,7 +40,7 @@ impl Mpd {
                 .map_err(|err| warn!("Failed to set Volume: {err}"));
         }
     }
-     pub fn decrease_volume(&mut self) {
+    pub fn decrease_volume(&mut self) {
         if let Some(vol) = self.get_volume() {
             let _ = self
                 .connection
@@ -48,7 +48,6 @@ impl Mpd {
                 .map_err(|err| warn!("Failed to set Volume: {err}"));
         }
     }
-
 
     pub fn get_volume(&self) -> Option<i8> {
         if let Some(status) = &self.status {
@@ -100,7 +99,7 @@ impl Mpd {
     pub fn toggle_shuffle(&mut self) {
         let _ = self
             .connection
-            .repeat(!self.get_shuffle().unwrap_or(false))
+            .shuffle(..)
             .map_err(|err| warn!("Failed to toggle Shuffle: {err}"));
     }
 
@@ -217,7 +216,7 @@ impl Mpd {
         let _ = self.connection.push(song);
     }
 
-    pub fn clear_queue(&mut self){
+    pub fn clear_queue(&mut self) {
         let _ = self.connection.clear();
     }
 }

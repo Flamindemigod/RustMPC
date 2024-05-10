@@ -6,15 +6,15 @@ use std::{
 
 use anyhow::Result;
 use crossterm::{
-    cursor::{Hide, MoveTo, MoveToColumn},
+    cursor::{Hide, MoveTo},
     event::{
         poll, read, DisableMouseCapture, EnableMouseCapture, Event, KeyboardEnhancementFlags,
         PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
     execute, queue,
-    style::{Attribute, Color, PrintStyledContent, SetBackgroundColor, Stylize},
+    style::{Attribute, Color, PrintStyledContent, Stylize},
     terminal::{self, supports_keyboard_enhancement, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand, QueueableCommand,
+    ExecutableCommand,
 };
 use log::error;
 
@@ -127,9 +127,6 @@ impl UI for Crossterm {
             ct.stdout
                 .execute(PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::all()))?;
         }
-
-        ct.stdout
-            .execute(terminal::Clear(terminal::ClearType::All))?;
         Ok(ct)
     }
     fn read_event(&mut self) -> anyhow::Result<crossterm::event::Event> {
@@ -215,7 +212,24 @@ impl Render for Crossterm {
             }
         }
     }
-
+    fn set_foreground(&mut self, rect: Rect, color: Color) {
+        for x in rect.x..(rect.x + rect.width) {
+            for y in rect.y..(rect.y + rect.height) {
+                if let Some(cell) = self.buffer.get(x as usize, y as usize) {
+                    cell.fg = color
+                };
+            }
+        }
+    }
+    fn set_attributes(&mut self, rect: Rect, attr: Attribute) {
+        for x in rect.x..(rect.x + rect.width) {
+            for y in rect.y..(rect.y + rect.height) {
+                if let Some(cell) = self.buffer.get(x as usize, y as usize) {
+                    cell.attribute = Some(attr);
+                };
+            }
+        }
+    }
     fn render_frame(&mut self) -> Result<()> {
         let patches = self.buffer.diff(&self.prev_buffer);
         for patch in &patches {
